@@ -27,15 +27,23 @@ import cv2
 
 
 class AleInterface(Environment):
-  def __init__(self, rom_name):
+  def __init__(self, rom_name, record_display=True):
     super(AleInterface, self).__init__()
     self.ale = ALEInterface()
+    self.record_display = record_display
+
+    if self.record_display:
+      self.ale.setBool('display_screen', True)
+      self.ale.setString('record_screen_dir', 'movie')
+    else:
+      self.display_name = rom_name
+      cv2.startWindowThread()
+      cv2.namedWindow(self.display_name)
+
     self.ale.loadROM(rom_name)
     self.actions = self.ale.getMinimalActionSet()
     self.screen_width, self.screen_height = self.ale.getScreenDims()
-    self.display_name = rom_name
-    cv2.startWindowThread()
-    cv2.namedWindow(self.display_name)
+
 
   def act(self, action):
     reward = self.ale.act(self.actions[action])
@@ -55,6 +63,7 @@ class AleInterface(Environment):
     return range(0, len(self.actions))
 
   def preprocess(self, screen):
-    cv2.imshow(self.display_name, screen)
+    if not self.record_display:
+      cv2.imshow(self.display_name, screen)
     resized = cv2.resize(screen, (84, 84))
     return resized

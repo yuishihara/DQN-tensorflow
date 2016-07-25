@@ -222,7 +222,7 @@ def save_network_parameters(session, iterations):
   target_network.save_parameters(session, 'checkpoint/dqn_target_network', iterations)
 
 def start_training(session):
-  environment = AleInterface('breakout.bin')
+  environment = AleInterface('breakout.bin', record_video=False)
   epoch = 0
   iterations = 0
   frame_num = 0
@@ -245,10 +245,15 @@ def debug_play_randomly():
       environment.act(select_random_action_from(actions))
     environment.reset()
 
+def debug_take_video(session, train_checkpoint):
+  environment = AleInterface('breakout.bin')
+  for i in range(5):
+    random.seed()
+    train_network.restore_parameters(session, train_checkpoint)
+    score = evaluate_network(environment)
 
 with tf.Session(graph=graph) as sess:
   tf.initialize_all_variables().run()
   update_target_network(sess)
   if __name__ == '__main__':
-    # debug_play_randomly()
     start_training(sess)
