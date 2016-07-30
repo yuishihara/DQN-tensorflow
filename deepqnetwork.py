@@ -119,4 +119,7 @@ class DeepQNetwork:
     self.saver.save(session, save_path=file_name, global_step=global_step)
 
   def restore_parameters(self, session, file_name):
+    if file_name is None or file_name == '':
+      print 'Filename was not specified. Use default parameter'
+      return
     self.saver.restore(session, save_path=file_name)
