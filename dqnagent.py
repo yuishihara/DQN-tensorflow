@@ -69,6 +69,10 @@ with graph.as_default():
   tf_action_selection_input = tf.placeholder(tf.float32, shape=(1, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
   action_q_values = train_network.q_values(tf_action_selection_input)
 
+# Tensorflow session configs
+config = tf.ConfigProto()
+config.log_device_placement = True
+
 # Command line args
 FLAGS = gflags.FLAGS
 gflags.DEFINE_string('train_checkpoint', '', 'checkpoint file of train network')
@@ -277,7 +281,7 @@ def debug_take_video(session, train_checkpoint):
     train_network.restore_parameters(session, train_checkpoint)
     score = evaluate_network(environment)
 
-with tf.Session(graph=graph) as sess:
+with tf.Session(graph=graph, config=config) as sess:
   tf.initialize_all_variables().run()
   update_target_network(sess)
   if __name__ == '__main__':
