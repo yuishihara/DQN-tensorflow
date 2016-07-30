@@ -123,3 +123,7 @@ class DeepQNetwork:
       print 'Filename was not specified. Use default parameter'
       return
     self.saver.restore(session, save_path=file_name)
+
+  def debug_print_variables(self, session):
+    # show snippet of the weight for checking
+    print session.run(self.conv1_weights)[0]
