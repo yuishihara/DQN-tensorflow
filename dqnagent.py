@@ -24,6 +24,8 @@ import tensorflow as tf
 import deepqnetwork as dqn
 import random
 import numpy as np
+import gflags
+import sys
 from ale_environment import AleInterface
 
 BATCH_SIZE = 32
@@ -67,6 +69,10 @@ with graph.as_default():
   tf_action_selection_input = tf.placeholder(tf.float32, shape=(1, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
   action_q_values = train_network.q_values(tf_action_selection_input)
 
+# Command line args
+FLAGS = gflags.FLAGS
+gflags.DEFINE_string('train_checkpoint', '', 'checkpoint file of train network')
+gflags.DEFINE_string('target_checkpoint', '', 'checkpoint file of target network')
 
 def train_with(session, memories):
   state_batch = [memory[0] for memory in memories]
@@ -221,11 +227,30 @@ def save_network_parameters(session, iterations):
   train_network.save_parameters(session, 'checkpoint/dqn_train_network', iterations)
   target_network.save_parameters(session, 'checkpoint/dqn_target_network', iterations)
 
-def start_training(session):
+def parse_iteration_num(string):
+  candidates = string.split('-')
+  for candidate in candidates:
+    if candidate.isdigit():
+      return int(candidate)
+  return 0
+
+def start_training(argv, session):
+  try:
+    argv = FLAGS(argv)
+  except gflags.FlagsError:
+    print 'Incompatible flags were specified'
+    return
+  print 'train checkpoint: ', FLAGS.train_checkpoint
+  print 'target checkpoint: ', FLAGS.target_checkpoint
+  train_network.restore_parameters(session, FLAGS.train_checkpoint)
+  target_network.restore_parameters(session, FLAGS.target_checkpoint)
+
   environment = AleInterface('breakout.bin', record_display=False)
-  epoch = 0
-  iterations = 0
-  frame_num = 0
+  iterations = parse_iteration_num(FLAGS.train_checkpoint)
+  frame_num = iterations
+  epoch = iterations / ITERATIONS_PER_EPOCH
+
+  print 'start from iteration: ', iterations
   while epoch < MAX_EPOCHS:
     random.seed()
     iterations, frame_num = execute_one_episode_with(session, environment, iterations, frame_num)
@@ -256,4 +281,4 @@ with tf.Session(graph=graph) as sess:
   tf.initialize_all_variables().run()
   update_target_network(sess)
   if __name__ == '__main__':
-    start_training(sess)
+    start_training(sys.argv, sess)
