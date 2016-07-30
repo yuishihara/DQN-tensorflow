@@ -86,6 +86,13 @@ class DeepQNetwork:
     filtered_qs = self.filtered_q_values(data, q_value_filter)
     return tf.reduce_mean(tf.nn.l2_loss(target - filtered_qs))
 
+  def clipped_loss(self, data, target, q_value_filter):
+    filtered_qs = self.filtered_q_values(data, q_value_filter)
+    error = tf.abs(target - filtered_qs)
+    quadratic = tf.clip_by_value(error, 0.0, 1.0)
+    linear = error - quadratic
+    return tf.reduce_mean(tf.nn.l2_loss(quadratic) + linear)
+
   def create_conv_net(self, shape, name):
     weights = tf.Variable(tf.truncated_normal(shape=shape, stddev=0.01), name=name + 'weights')
     biases = tf.Variable(tf.constant(0.01, shape=[shape[3]]), name=name + 'biases')
