@@ -63,8 +63,8 @@ with graph.as_default():
   target_network = dqn.DeepQNetwork(IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS, NUM_ACTIONS)
   target_q_values = target_network.q_values(tf_target_input)
 
-  loss = train_network.loss(tf_train_input, tf_train_target, tf_filter_input)
-  optimizer = tf.train.RMSPropOptimizer(learning_rate=0.000025).minimize(loss)
+  loss = train_network.clipped_loss(tf_train_input, tf_train_target, tf_filter_input)
+  optimizer = tf.train.RMSPropGravesOptimizer(learning_rate=0.00025, decay=0.95, momentum=0.0, epsilon=1e-2).minimize(loss)
 
   tf_action_selection_input = tf.placeholder(tf.float32, shape=(1, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
   action_q_values = train_network.q_values(tf_action_selection_input)
