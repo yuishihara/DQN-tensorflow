@@ -28,6 +28,12 @@ import gflags
 import sys
 from ale_environment import AleInterface
 
+# Command line args
+FLAGS = gflags.FLAGS
+gflags.DEFINE_string('train_checkpoint', '', 'checkpoint file of train network')
+gflags.DEFINE_string('target_checkpoint', '', 'checkpoint file of target network')
+
+# Network parameters
 BATCH_SIZE = 32
 IMAGE_WIDTH = 84
 IMAGE_HEIGHT = 84
@@ -68,11 +74,6 @@ with graph.as_default():
 
   tf_action_selection_input = tf.placeholder(tf.float32, shape=(1, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
   action_q_values = train_network.q_values(tf_action_selection_input)
-
-# Command line args
-FLAGS = gflags.FLAGS
-gflags.DEFINE_string('train_checkpoint', '', 'checkpoint file of train network')
-gflags.DEFINE_string('target_checkpoint', '', 'checkpoint file of target network')
 
 # Tensorflow session configs
 config = tf.ConfigProto()
