@@ -23,7 +23,7 @@
 import tensorflow as tf
 
 class DeepQNetwork:
-  def __init__(self, image_width, image_height, num_channels, num_actions):
+  def __init__(self, image_width, image_height, num_channels, num_actions, name):
     # network variables
     # conv1
     self.conv1_filter_size = 8
@@ -31,7 +31,7 @@ class DeepQNetwork:
     self.conv1_stride = 4
     self.conv1_output_size = (image_width - self.conv1_filter_size) / self.conv1_stride + 1  # 20 with 84 * 84 image and no padding
     self.conv1_weights, self.conv1_biases = \
-      self.create_conv_net([self.conv1_filter_size, self.conv1_filter_size, num_channels, self.conv1_filter_num], name='conv1')
+      self.create_conv_net([self.conv1_filter_size, self.conv1_filter_size, num_channels, self.conv1_filter_num], name=name+'conv1')
 
     # conv2
     self.conv2_filter_size = 4
@@ -39,7 +39,7 @@ class DeepQNetwork:
     self.conv2_stride = 2
     self.conv2_output_size = (self.conv1_output_size - self.conv2_filter_size) / self.conv2_stride + 1  # 9 with 84 * 84 image no padding
     self.conv2_weights, self.conv2_biases = \
-      self.create_conv_net([self.conv2_filter_size, self.conv2_filter_size, self.conv1_filter_num, self.conv2_filter_num], name='conv2')
+      self.create_conv_net([self.conv2_filter_size, self.conv2_filter_size, self.conv1_filter_num, self.conv2_filter_num], name=name+'conv2')
 
     # conv3
     self.conv3_filter_size = 3
@@ -47,29 +47,32 @@ class DeepQNetwork:
     self.conv3_stride = 1
     self.conv3_output_size = (self.conv2_output_size - self.conv3_filter_size) / self.conv3_stride + 1  # 7 with 84 * 84 image no padding
     self.conv3_weights, self.conv3_biases = \
-      self.create_conv_net([self.conv3_filter_size, self.conv3_filter_size, self.conv2_filter_num, self.conv3_filter_num], name='conv3')
+      self.create_conv_net([self.conv3_filter_size, self.conv3_filter_size, self.conv2_filter_num, self.conv3_filter_num], name=name+'conv3')
 
     # inner product 1
     self.inner1_inputs = self.conv3_output_size * self.conv3_output_size * self.conv3_filter_num  # should be 3136 for default
     self.inner1_outputs = 512
-    self.inner1_weights, self.inner1_biases = self.create_inner_net([self.inner1_inputs, self.inner1_outputs], name='inner1')
+    self.inner1_weights, self.inner1_biases = self.create_inner_net([self.inner1_inputs, self.inner1_outputs], name=name+'inner1')
 
     # inner product 2
     self.inner2_inputs = self.inner1_outputs
     self.inner2_outputs = num_actions
-    self.inner2_weights, self.inner2_biases = self.create_inner_net([self.inner2_inputs, self.inner2_outputs], name='inner2')
+    self.inner2_weights, self.inner2_biases = self.create_inner_net([self.inner2_inputs, self.inner2_outputs], name=name+'inner2')
 
     # Network variable saver
     self.saver = tf.train.Saver({var.name: var for var in self.weights_and_biases()})
 
+    # Network name
+    self.name = name
+
 
   def forward(self, data):
-    conv1 = tf.nn.conv2d(data, self.conv1_weights, [1, self.conv1_stride, self.conv1_stride, 1], padding='VALID')
-    conv1 = tf.nn.relu(conv1 + self.conv1_biases)
-    conv2 = tf.nn.conv2d(conv1, self.conv2_weights, [1, self.conv2_stride, self.conv2_stride, 1], padding='VALID')
-    conv2 = tf.nn.relu(conv2 + self.conv2_biases)
-    conv3 = tf.nn.conv2d(conv2, self.conv3_weights, [1, self.conv3_stride, self.conv3_stride, 1], padding='VALID')
-    conv3 = tf.nn.relu(conv3 + self.conv3_biases)
+    conv1 = tf.nn.conv2d(data, self.conv1_weights, [1, self.conv1_stride, self.conv1_stride, 1], padding='VALID', name=self.name+'conv1')
+    conv1 = tf.nn.relu(conv1 + self.conv1_biases, name=self.name+'relu1')
+    conv2 = tf.nn.conv2d(conv1, self.conv2_weights, [1, self.conv2_stride, self.conv2_stride, 1], padding='VALID', name=self.name+'conv2')
+    conv2 = tf.nn.relu(conv2 + self.conv2_biases, name=self.name+'relu2')
+    conv3 = tf.nn.conv2d(conv2, self.conv3_weights, [1, self.conv3_stride, self.conv3_stride, 1], padding='VALID', name=self.name+'conv3')
+    conv3 = tf.nn.relu(conv3 + self.conv3_biases, name=self.name+'relu3')
     shape = conv3.get_shape().as_list()
     reshape = tf.reshape(conv3, [shape[0], shape[1] * shape[2] * shape[3]])
     inner1 = tf.nn.relu(tf.matmul(reshape, self.inner1_weights) + self.inner1_biases)

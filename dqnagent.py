@@ -57,10 +57,10 @@ with graph.as_default():
   tf_train_input = tf.placeholder(tf.float32, shape=(BATCH_SIZE, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
   tf_train_target = tf.placeholder(tf.float32, shape=(BATCH_SIZE, NUM_ACTIONS))
   tf_filter_input = tf.placeholder(tf.float32, shape=(BATCH_SIZE, NUM_ACTIONS))
-  train_network = dqn.DeepQNetwork(IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS, NUM_ACTIONS)
+  train_network = dqn.DeepQNetwork(IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS, NUM_ACTIONS, 'train')
 
   tf_target_input = tf.placeholder(tf.float32, shape=(BATCH_SIZE, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
-  target_network = dqn.DeepQNetwork(IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS, NUM_ACTIONS)
+  target_network = dqn.DeepQNetwork(IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS, NUM_ACTIONS, 'target')
   target_q_values = target_network.q_values(tf_target_input)
 
   loss = train_network.clipped_loss(tf_train_input, tf_train_target, tf_filter_input)
@@ -69,14 +69,17 @@ with graph.as_default():
   tf_action_selection_input = tf.placeholder(tf.float32, shape=(1, IMAGE_WIDTH, IMAGE_HEIGHT, NUM_CHANNELS))
   action_q_values = train_network.q_values(tf_action_selection_input)
 
-# Tensorflow session configs
-config = tf.ConfigProto()
-config.log_device_placement = True
-
 # Command line args
 FLAGS = gflags.FLAGS
 gflags.DEFINE_string('train_checkpoint', '', 'checkpoint file of train network')
 gflags.DEFINE_string('target_checkpoint', '', 'checkpoint file of target network')
+
+# Tensorflow session configs
+config = tf.ConfigProto()
+# config.log_device_placement = True
+
+# Output to tensorboard
+summary_writer = tf.train.SummaryWriter('summary' + '/train', graph=graph)
 
 def train_with(session, memories):
   state_batch = [memory[0] for memory in memories]
@@ -238,6 +241,11 @@ def parse_iteration_num(string):
       return int(candidate)
   return 0
 
+def summaries(score):
+  score_summary = tf.scalar_summary('score', score)
+  return tf.merge_summary([score_summary])
+
+
 def start_training(argv, session):
   try:
     argv = FLAGS(argv)
@@ -261,9 +269,9 @@ def start_training(argv, session):
     if epoch < (iterations / ITERATIONS_PER_EPOCH):
       save_network_parameters(session, iterations)
       score = evaluate_network(environment)
+      summary_writer.add_summary(session.run(summaries(score)), epoch)
       print 'evaluation result of epoch: ', epoch, ' score: ', score
       epoch += 1
-
 
 def debug_play_randomly():
   environment = AleInterface('breakout.bin')
@@ -281,8 +289,8 @@ def debug_take_video(session, train_checkpoint):
     train_network.restore_parameters(session, train_checkpoint)
     score = evaluate_network(environment)
 
-with tf.Session(graph=graph, config=config) as sess:
+with tf.Session(graph=graph, config=config) as session:
   tf.initialize_all_variables().run()
-  update_target_network(sess)
+  update_target_network(session)
   if __name__ == '__main__':
-    start_training(sys.argv, sess)
+    start_training(sys.argv, session)
