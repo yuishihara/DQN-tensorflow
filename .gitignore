@@ -1,8 +1,10 @@
 .idea/
 checkpoint/
+summary/
 movie/
 *.pyc
 *.bin
 *.mp4
+*.sh
 *.swp
 *.swo
