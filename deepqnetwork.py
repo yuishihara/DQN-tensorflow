@@ -94,7 +94,7 @@ class DeepQNetwork:
     error = tf.abs(target - filtered_qs)
     quadratic = tf.clip_by_value(error, 0.0, 1.0)
     linear = error - quadratic
-    return tf.reduce_mean(0.5 * tf.square(quadratic) + linear)
+    return tf.reduce_sum(0.5 * tf.square(quadratic) + linear)
 
   def create_conv_net(self, shape, name):
     weights = tf.Variable(tf.truncated_normal(shape=shape, stddev=0.01), name=name + 'weights')
