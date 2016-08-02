@@ -222,7 +222,7 @@ def save_network_parameters(session, iterations):
   target_network.save_parameters(session, 'checkpoint/dqn_target_network', iterations)
 
 def start_training(session):
-  environment = AleInterface('breakout.bin', record_video=False)
+  environment = AleInterface('breakout.bin', record_display=False)
   epoch = 0
   iterations = 0
   frame_num = 0
