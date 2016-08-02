@@ -81,7 +81,7 @@ def train_with(session, memories):
     end_state = memories[i][4]
     action_index = action_batch[i]
     reward = reward_batch[i]
-    target[i][action_index] = reward if end_state else reward + GAMMA * target_qs[i][action_index]
+    target[i][action_index] = reward if end_state else reward + GAMMA * np.max(target_qs[i])
     q_value_filter[i][action_index] = 1.0
 
   session.run(optimizer, feed_dict={tf_train_input: state_batch,
