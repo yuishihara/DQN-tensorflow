@@ -212,24 +212,27 @@ def evaluate_network(environment):
   # Start training
   state = np.stack(screens, axis=-1)
   total_reward = 0
-  while environment.is_end_state() is False:
-    assert state.shape == (IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)
-    epsilon = 0.05
-    if is_greedy(epsilon):
-      action = select_greedy_action_from(state, actions)
-    else:
-      action = select_random_action_from(actions)
+  EVALUATION_NUM = 5
+  for i in range(EVALUATION_NUM):
+    while environment.is_end_state() is False:
+      assert state.shape == (IMAGE_HEIGHT, IMAGE_WIDTH, NUM_CHANNELS)
+      epsilon = 0.05
+      if is_greedy(epsilon):
+        action = select_greedy_action_from(state, actions)
+      else:
+        action = select_random_action_from(actions)
 
-    reward = 0.0
-    for i in range(SKIPPING_FRAME_NUM):
-      intermediate_reward, next_screen = environment.act(action)
-      reward += np.clip([intermediate_reward], -1, 1)[0]
-    total_reward += reward
+      reward = 0.0
+      for i in range(SKIPPING_FRAME_NUM):
+        intermediate_reward, next_screen = environment.act(action)
+        reward += np.clip([intermediate_reward], -1, 1)[0]
+      total_reward += reward
 
-    next_state = np.reshape(next_screen, (IMAGE_HEIGHT, IMAGE_WIDTH, 1))
-    state = np.append(state[:, :, 1:], next_state, axis=-1)
+      next_state = np.reshape(next_screen, (IMAGE_HEIGHT, IMAGE_WIDTH, 1))
+      state = np.append(state[:, :, 1:], next_state, axis=-1)
+    environment.reset()
 
-  return total_reward
+  return total_reward // EVALUATION_NUM
 
 def save_network_parameters(session, iterations):
   train_network.save_parameters(session, 'checkpoint/dqn_train_network', iterations)
